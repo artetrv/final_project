@@ -37,29 +37,21 @@ impl ThreadPool {
     }
 
     pub fn resize(&mut self, new_size: usize) {
-        assert!(new_size > 0);
-        let current = self.workers.len();
+    assert!(new_size > 0);
+    let current = self.workers.len();
 
-        if new_size > current {
-           
-            for id in current..new_size {
-                self.workers.push(Worker::new(id, Arc::clone(&self.receiver)));
-            }
-        } else if new_size < current {
-            
-            let to_remove = current - new_size;
-
-            for _ in 0..to_remove {
-                let _ = self.sender.send(Message::Terminate);
-            }
-
-            for _ in 0..to_remove {
-                if let Some(mut w) = self.workers.pop() {
-                    w.join();
-                }
-            }
+    if new_size > current {
+        for id in current..new_size {
+            self.workers.push(Worker::new(id, Arc::clone(&self.receiver)));
+        }
+    } else if new_size < current {
+        self.shutdown();
+        for id in 0..new_size {
+            self.workers.push(Worker::new(id, Arc::clone(&self.receiver)));
         }
     }
+}
+
 
     pub fn shutdown(&mut self) {
         for _ in &self.workers {
